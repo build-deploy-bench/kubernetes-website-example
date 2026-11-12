@@ -1,11 +1,11 @@
 # Image for the container providers (Railway, Fly). Render and Vercel build the site natively and serve it from
 # their CDNs, so they do not use this file.
-# bench/build.sh downloads Hugo and Node itself, as on Render and Vercel; this base image only has curl and git.
+# Node is the version in .node-version. bench/build.sh downloads Hugo, as on Render and Vercel.
 # Upstream's Dockerfile (its Hugo dev container) is replaced by this file.
-FROM buildpack-deps:bookworm-scm AS build
+FROM node:26.13.1-bookworm AS build
 WORKDIR /app
 # Only the install inputs, so a source change keeps the install layer.
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY bench/build.sh bench/build.sh
 RUN sh ./bench/build.sh install
 COPY . .
