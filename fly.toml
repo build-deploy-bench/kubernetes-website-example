@@ -24,6 +24,7 @@ primary_region = "iad"
     method = "GET"
     path = "/"
 
+# The `fly launch` default for a new app: shared-cpu-1x with 1 GB.
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "1gb"

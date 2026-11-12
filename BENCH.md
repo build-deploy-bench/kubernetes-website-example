@@ -58,7 +58,7 @@ Image: 4.97 GB uncompressed (local arm64 build). The site is one 3.9 GB layer.
 - Workspace `tea-dbmbhbg8v5cc73e4m0jg` (Pro). Static site `srv-dbquc9gu01pc7384g7m0` `bdb-kubernetes-website`, https://bdb-kubernetes-website.onrender.com. Build plan `starter` (2 CPU, 8 GB). Static sites have no instance cost. Auto-deploy off.
 - Build command `./bench/build.sh all`, publish path `public`. Header rule `/*` `X-Robots-Tag: noindex, nofollow`. Env `SKIP_INSTALL_DEPS=true`, `BENCH_RUN_ID`. Without `SKIP_INSTALL_DEPS`, Render ran its own `npm install` (55 s) before the build command, so the site was installed twice.
 - Hugo's `--cleanDestinationDir` keeps paths that match `ignoreFiles` (`^node_modules$`), and Render restores `public/` from its build cache. After patch 5, the first build with the cache still had the 11 old files (12,474); a build with a cleared cache had 12,463.
-- **Keep the site suspended between runs.** The harness does not suspend static sites, so suspend it by hand after each matrix (`POST /v1/services/<id>/suspend`). A suspended static site returns 503. The harness resumes it before a suite, which starts a full build (about 5 min).
+- **The site is suspended between runs.** The fixture is `private` in the harness `FIXTURES`, so the pause suspends this static site (503) and checks that it no longer answers. The harness resumes it before a suite, which starts a full build (about 5 min).
 - Setup deploys: `dep-dbquc9ou01pc7384g890`, `dep-dbqufjei0phs738ka0i0`. The 3.9 GB upload and publish took 80 to 95 s.
 
 ### Railway
@@ -74,14 +74,14 @@ Image: 4.97 GB uncompressed (local arm64 build). The site is one 3.9 GB layer.
 - Framework none. Build machine `standard` (4 CPU, 8 GB), selection `fixed` (the default was `elastic`). Project Node setting `26.x`; `engines.node` takes precedence.
 - The Vercel CLI leaves every `node_modules` path out of the upload. Before patch 5, the Vercel output had 11 fewer files (12,452).
 - `Deploying outputs` for 3.9 GB took 14 to 16 s.
-- **Delete the deployments after a matrix** (`DELETE /v13/deployments/<id>`); there is no pause. This also drops the build cache, so the first run of the next matrix is cold.
+- **The deployments are deleted after a matrix.** Vercel has no pause, so the harness pause deletes every deployment of the project (the fixture is `private`). This also drops the build cache, so a suite must start with its cold run; the harness warns if it starts with a warm one.
 
 ### Fly.io
 
-- Org `personal`. App `bdb-kubernetes-website`, https://bdb-kubernetes-website.fly.dev. One Machine, `iad`, shared-cpu-1x 256 MB. Image 4.1 GB.
+- Org `personal`. App `bdb-kubernetes-website`, https://bdb-kubernetes-website.fly.dev. One Machine, `iad`, shared-cpu-1x with 1 GB (the `fly launch` default). Image 4.1 GB.
 - Deploy: `flyctl deploy --remote-only --depot=false` from a `git archive`. The runner uploads the 528 MB build context to the builder on every deploy, at about 1.4 to 2 MB/s from the setup Mac (275 s at setup, 382 s in the warm run), and this is inside Fly's `build_total`. The cold run sent only 1.26 MB, because it deployed the same commit as the setup deploy just before it.
 - Setup deploys of `75bf859` and `f3be3a0`, under the Fly build lock. On the shared builder (shared-cpu-8x, 8 GB), Hugo took 632 to 655 s, against 62 s on Railway and 127 s on Vercel. Without the lock, `npm ci` took 18 min and the deploy did not finish.
-- **Make the app unreachable between runs.** A stopped Machine starts again on any request (`auto_start_machines = true`), so the harness pause alone leaves the site reachable. After the matrix, both public IPs were released (`flyctl ips release`). Before the next matrix, run `flyctl ips allocate-v6 -a bdb-kubernetes-website` and `flyctl ips allocate-v4 --shared -a bdb-kubernetes-website`.
+- **The app is unreachable between runs.** The harness pause turns off autostart on the stopped Machine, so a request cannot start it again; the next deploy turns it on from `fly.toml`. The IPs stay allocated (they were released by hand once and allocated again on 2026-11-12).
 
 ## Matrix runs (one cold and one warm run per provider)
 
