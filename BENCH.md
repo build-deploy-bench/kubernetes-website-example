@@ -70,7 +70,7 @@ Image: 4.97 GB uncompressed (local arm64 build). The site is one 3.9 GB layer.
 ### Fly.io
 
 - Org `personal`. App `bdb-kubernetes-website`, https://bdb-kubernetes-website.fly.dev. One Machine, `iad`, shared-cpu-1x 256 MB. Image 4.1 GB.
-- Deploy: `flyctl deploy --remote-only --depot=false` from a `git archive`. The first upload of the 538 MB context took 275 s from the setup Mac; later builds send only the changed files to the builder.
+- Deploy: `flyctl deploy --remote-only --depot=false` from a `git archive`. The runner uploads the 528 MB build context to the builder on every deploy, at about 1.4 to 2 MB/s from the setup Mac (275 s at setup, 382 s in the warm run), and this is inside Fly's `build_total`. The cold run sent only 1.26 MB, because it deployed the same commit as the setup deploy just before it.
 - Setup deploy of `75bf859` (Machine `83dd700a72d9d8`, replaced by the matrix runs), under the Fly build lock. On the shared builder (shared-cpu-8x, 8 GB), Hugo took 632 to 655 s, against 62 s on Railway and 127 s on Vercel. Without the lock, `npm ci` took 18 min and the deploy did not finish.
 - **Make the app unreachable between runs.** A stopped Machine starts again on any request (`auto_start_machines = true`), so the harness pause alone leaves the site reachable. After the matrix, both public IPs were released (`flyctl ips release`). Before the next matrix, run `flyctl ips allocate-v6 -a bdb-kubernetes-website` and `flyctl ips allocate-v4 --shared -a bdb-kubernetes-website`.
 
@@ -85,6 +85,6 @@ Image: 4.97 GB uncompressed (local arm64 build). The site is one 3.9 GB layer.
 | Vercel | cold | 240 | 249 | install 41, Hugo 126, output deploy 14 |
 | Vercel | warm | 245 | 253 | build cache restored; install still 44 |
 | Fly | cold | 1,243 | 1,295 | Hugo 636, image export 122, push 102 |
-| Fly | warm | 1,307 | 1,346 | install cached; context transfer 382, Hugo 380 |
+| Fly | warm | 1,307 | 1,346 | context upload 382 (in `source`), install cached, Hugo 380 |
 
 Raw runs: `build-deploy-bench-runs/2026-11-12-static-large/`. Fly ran under the Fly build lock; the other providers' setup deploys ran before the lock existed.
