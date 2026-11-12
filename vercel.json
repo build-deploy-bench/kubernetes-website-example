@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "./bench/build.sh install",
+  "buildCommand": "./bench/build.sh build",
+  "outputDirectory": "public",
+  "git": { "deploymentEnabled": false },
+  "rewrites": [{ "source": "/version", "destination": "/version.json" }],
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ]
+}
