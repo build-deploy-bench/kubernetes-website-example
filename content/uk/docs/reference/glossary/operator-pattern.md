@@ -1,0 +1,21 @@
+---
+title: Шаблон Operator
+id: operator-pattern
+full_link: /docs/concepts/extend-kubernetes/operator/
+short_description: >
+  Спеціалізований контролер, призначений для управління власним ресурсом.
+
+aka:
+- Operator
+- Operator pattern
+tags:
+- architecture
+---
+
+[Шаблон Operator](/docs/concepts/extend-kubernetes/operator/) — це системний дизайн, який повʼязує {{< glossary_tooltip text="контролер" term_id="controller" >}} з одним чи кількома власними ресурсами.
+
+<!--more-->
+
+Ви можете розширити функціонал Kubernetes, додаючи контролери до свого кластера, окрім вбудованих контролерів, які постачаються разом із самим Kubernetes.
+
+Якщо запущений застосунок діє як контролер та має доступ до API для виконання завдань щодо власного ресурсу, що визначений в панелі управління, це приклад шаблону Operator.
