@@ -12,6 +12,12 @@ mark() {
 
 HUGO_VERSION=0.144.2
 HUGO_DIR="$PWD/.bench/hugo-$HUGO_VERSION"
+NODE_VERSION=20.17.0
+NODE_DIR="$PWD/.bench/node-v$NODE_VERSION"
+# Upstream's Netlify build pins Node 20.17.0. Vercel no longer offers Node 20, and with Node 26 (npm 11) the install
+# resolves other packages and skips Docsy's postinstall, so the output changes. Every provider therefore uses this
+# download, whatever Node its build image has.
+export PATH="$NODE_DIR/bin:$PATH"
 
 # Hugo settings, the same on every provider. They are set here and not in each provider's settings, so they cannot
 # drift apart.
@@ -23,28 +29,42 @@ export HUGO_ENABLEGITINFO=false
 export HUGO_SECURITY_HTTP_URLS='^https://none\.invalid/'
 export HUGO_MEMORYLIMIT=6
 
-# Hugo extended is not on any provider's build image in the same version, so every provider downloads the same
-# release. The checksum pins the archive.
-install_hugo() {
+# Download a release archive to `dir`, check it against `sum`, and unpack it there. An existing `dir` is kept, so a
+# provider that restores `.bench/` from its build cache skips the download.
+fetch() { # url sum dir tar-args...
+  url="$1" sum="$2" dir="$3"
+  shift 3
+  [ -d "$dir" ] && return
+  mkdir -p "$dir.partial"
+  curl -fsSL -o "$dir.partial/archive" "$url"
+  printf '%s  %s\n' "$sum" "$dir.partial/archive" | sha256sum -c -
+  tar -xzf "$dir.partial/archive" -C "$dir.partial" "$@"
+  rm "$dir.partial/archive"
+  mv "$dir.partial" "$dir"
+}
+
+# Hugo extended and Node are not on every provider's build image in these versions, so every provider downloads the
+# same releases. The checksums pin the archives.
+install_tools() {
   case "$(uname -m)" in
-    x86_64 | amd64) arch=amd64 sum=961b258ba2478bec4b2756be4f8982b221bf2d6c1b20f0727ad86e84677053d9 ;;
-    aarch64 | arm64) arch=arm64 sum=5d0756c3e72a7386f3a3fcd432789c39c3d1239715e147c63bd7a73bbfcfc93f ;;
+    x86_64 | amd64)
+      fetch "https://github.com/gohugoio/hugo/releases/download/v$HUGO_VERSION/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" \
+        961b258ba2478bec4b2756be4f8982b221bf2d6c1b20f0727ad86e84677053d9 "$HUGO_DIR" hugo
+      fetch "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" \
+        21e656f6f4e34080ddc5d75fbfe58ce8482fe6e70a76aeae14afdcdc1e23079d "$NODE_DIR" --strip-components=1 ;;
+    aarch64 | arm64)
+      fetch "https://github.com/gohugoio/hugo/releases/download/v$HUGO_VERSION/hugo_extended_${HUGO_VERSION}_linux-arm64.tar.gz" \
+        5d0756c3e72a7386f3a3fcd432789c39c3d1239715e147c63bd7a73bbfcfc93f "$HUGO_DIR" hugo
+      fetch "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-arm64.tar.gz" \
+        18afbf2781edfcc9918343f4bf74a8c35d74d778b85d40a0c09b232adc0ea82c "$NODE_DIR" --strip-components=1 ;;
     *) printf 'Unsupported architecture: %s\n' "$(uname -m)" >&2; exit 1 ;;
   esac
-  if [ -x "$HUGO_DIR/hugo" ]; then
-    return
-  fi
-  tgz="hugo_extended_${HUGO_VERSION}_linux-$arch.tar.gz"
-  mkdir -p "$HUGO_DIR"
-  curl -fsSL -o "$HUGO_DIR/$tgz" "https://github.com/gohugoio/hugo/releases/download/v$HUGO_VERSION/$tgz"
-  printf '%s  %s\n' "$sum" "$HUGO_DIR/$tgz" | sha256sum -c -
-  tar -xzf "$HUGO_DIR/$tgz" -C "$HUGO_DIR" hugo
-  rm "$HUGO_DIR/$tgz"
 }
 
 install() {
   mark install_start
-  install_hugo
+  rm -rf .bench/*.partial
+  install_tools
   "$HUGO_DIR/hugo" version
   printf 'node %s, npm %s\n' "$(node --version)" "$(npm --version)"
   # Docsy is a GitHub dependency (git+ssh in the lockfile). npm falls back to HTTPS for GitHub, so this needs git

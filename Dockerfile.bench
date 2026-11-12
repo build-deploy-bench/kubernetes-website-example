@@ -1,6 +1,7 @@
 # Image for the Docker cells of the benchmark (Railway, Fly). Render and Vercel build the same site with
 # `bench/build.sh` on their native static hosting. Upstream's `Dockerfile` is its Hugo dev container and is not used.
-FROM node:20.17.0-bookworm AS build
+# bench/build.sh downloads Hugo and Node itself, as on Render and Vercel; this base image only adds curl and git.
+FROM buildpack-deps:bookworm-scm AS build
 
 WORKDIR /src
 # Install inputs only, so the install layer stays cached when only the content changes.
