@@ -69,5 +69,22 @@ Image: 4.97 GB uncompressed (local arm64 build). The site is one 3.9 GB layer.
 
 ### Fly.io
 
-- Org `personal`. App `bdb-kubernetes-website`, https://bdb-kubernetes-website.fly.dev. One Machine, `iad`, shared-cpu-1x 256 MB.
-- Deploy: `flyctl deploy --remote-only --depot=false` from a `git archive`, so every Fly run uploads the 538 MB build context from the runner (275 s from the setup Mac).
+- Org `personal`. App `bdb-kubernetes-website`, https://bdb-kubernetes-website.fly.dev. One Machine, `iad`, shared-cpu-1x 256 MB. Image 4.1 GB.
+- Deploy: `flyctl deploy --remote-only --depot=false` from a `git archive`. The first upload of the 538 MB context took 275 s from the setup Mac; later builds send only the changed files to the builder.
+- Setup deploy of `75bf859` (Machine `83dd700a72d9d8`, replaced by the matrix runs), under the Fly build lock. On the shared builder (shared-cpu-8x, 8 GB), Hugo took 632 to 655 s, against 62 s on Railway and 127 s on Vercel. Without the lock, `npm ci` took 18 min and the deploy did not finish.
+- **Make the app unreachable between runs.** A stopped Machine starts again on any request (`auto_start_machines = true`), so the harness pause alone leaves the site reachable. After the matrix, both public IPs were released (`flyctl ips release`). Before the next matrix, run `flyctl ips allocate-v6 -a bdb-kubernetes-website` and `flyctl ips allocate-v4 --shared -a bdb-kubernetes-website`.
+
+## Matrix 2026-11-12-static-large (one cold and one warm run per provider)
+
+| Provider | Run | build_total (s) | e2e (s) | Notes |
+|---|---|---|---|---|
+| Render | cold | 302 | 328 | install 51, Hugo 146, upload and publish 87 |
+| Render | warm | 301 | 325 | 172 MiB cache restored; install still 54 |
+| Railway | cold | 132 | 188 | install 30, Hugo 57, image push 10 |
+| Railway | warm | 159 | 210 | install layer rebuilt (observed cache cold); push 32 |
+| Vercel | cold | 240 | 249 | install 41, Hugo 126, output deploy 14 |
+| Vercel | warm | 245 | 253 | build cache restored; install still 44 |
+| Fly | cold | 1,243 | 1,295 | Hugo 636, image export 122, push 102 |
+| Fly | warm | 1,307 | 1,346 | install cached; context transfer 382, Hugo 380 |
+
+Raw runs: `build-deploy-bench-runs/2026-11-12-static-large/`. Fly ran under the Fly build lock; the other providers' setup deploys ran before the lock existed.
