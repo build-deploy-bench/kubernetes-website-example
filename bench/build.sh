@@ -62,11 +62,13 @@ install_tools() {
 }
 
 install() {
-  mark install_start
+  # Toolchain setup before the marker, as on the other fixtures: Render installs Node on the first `node` call, and the
+  # other providers set up their toolchain before the install step.
   rm -rf .bench/*.partial
   install_tools
   "$HUGO_DIR/hugo" version
   printf 'node %s, npm %s\n' "$(node --version)" "$(npm --version)"
+  mark install_start
   # Docsy is a GitHub dependency (git+ssh in the lockfile). npm falls back to HTTPS for GitHub, so this needs git
   # but no SSH key.
   npm ci
@@ -81,15 +83,16 @@ build() {
   mark build_done
 }
 
-# /version on the CDN providers (Render static site, Vercel) is this file. BENCH_RUN_ID is a build env var there, so
-# each deployment has its own ID. The Caddy image (Railway, Fly) overwrites `run` at start from its runtime env.
+# A CDN cannot answer from runtime env, so the build writes the deployment identity as `public/version` (no
+# extension, so every provider serves it at /version without a rewrite). BENCH_RUN_ID reaches the build on Render
+# (service env) and Vercel (--build-env). In the container (Railway, Fly), bench/serve.sh writes it again.
 # BENCH_COMMIT is the harness override (Fly passes it as a build arg); the others are provider variables.
 write_version() {
   commit="${BENCH_COMMIT:-${RENDER_GIT_COMMIT:-${RAILWAY_GIT_COMMIT_SHA:-${VERCEL_GIT_COMMIT_SHA:-}}}}"
   if [ -z "$commit" ]; then
     commit="$(git rev-parse HEAD 2>/dev/null || printf 'unknown')"
   fi
-  printf '{"commit":"%s","run":"%s"}\n' "$commit" "${BENCH_RUN_ID:-unknown}" > public/version.json
+  printf '{"commit":"%s","run":"%s"}\n' "$commit" "${BENCH_RUN_ID:-unknown}" > public/version
   printf 'output: %s files, %s\n' "$(find public -type f | wc -l | tr -d ' ')" "$(du -sh public | cut -f1)"
 }
 

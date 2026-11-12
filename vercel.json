@@ -4,9 +4,18 @@
   "installCommand": "./bench/build.sh install",
   "buildCommand": "./bench/build.sh build",
   "outputDirectory": "public",
-  "git": { "deploymentEnabled": false },
-  "rewrites": [{ "source": "/version", "destination": "/version.json" }],
+  "git": {
+    "deploymentEnabled": false
+  },
   "headers": [
-    { "source": "/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
   ]
 }

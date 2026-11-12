@@ -1,7 +1,0 @@
-# Used instead of upstream's .dockerignore, which admits only package.json and package-lock.json.
-.git
-.bench
-node_modules
-public
-resources/_gen
-.hugo_build.lock

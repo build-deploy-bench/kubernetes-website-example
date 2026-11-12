@@ -4,7 +4,7 @@
 primary_region = "iad"
 
 [build]
-  dockerfile = "Dockerfile.bench"
+  dockerfile = "Dockerfile"
 
 [http_service]
   internal_port = 80
@@ -22,8 +22,8 @@ primary_region = "iad"
     interval = "5s"
     timeout = "2s"
     method = "GET"
-    path = "/version"
+    path = "/"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "512mb"
+  memory = "256mb"
