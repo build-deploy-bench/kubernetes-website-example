@@ -1,3 +1,6 @@
+> [!WARNING]
+> **Benchmark fixture: do not use.** This repository is a copy of [kubernetes/website](https://github.com/kubernetes/website). We use it only as a test workload to measure build and deploy times on hosting platforms. It has benchmark patches (see [`BENCH.md`](BENCH.md)), gets no upstream fixes, and is not maintained. To use or contribute to the project, go to [kubernetes/website](https://github.com/kubernetes/website).
+
 # The Kubernetes documentation
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/be93b718-a6df-402a-b4a4-855ba186c97d/deploy-status)](https://app.netlify.com/sites/kubernetes-io-main-staging/deploys) [![GitHub release](https://img.shields.io/github/release/kubernetes/website.svg)](https://github.com/kubernetes/website/releases/latest)
