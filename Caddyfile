@@ -1,0 +1,19 @@
+# Static file server for the container providers (Railway, Fly). Render and Vercel serve the same files from
+# their CDNs. Logs go to stdout; request logging is off because the probe sends two requests per second.
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT} {
+	root * /srv
+	encode gzip
+	# Clean URLs, like the upstream Vercel rewrite `/:path*` -> `/:path*.html`.
+	try_files {path} {path}.html {path}/index.html
+	file_server
+	# Not for search engines: the site is a copy of kubernetes.io for benchmark runs only.
+	header X-Robots-Tag "noindex, nofollow"
+	@version path /version
+	header @version Content-Type application/json
+	header @version Cache-Control no-store
+}

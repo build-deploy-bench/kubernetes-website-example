@@ -10,5 +10,11 @@
     "postcss-cli": "^11.0.0",
     "rtlcss": "^4.3.0"
   },
-  "spelling": "cSpell:ignore docsy pkgs -"
+  "spelling": "cSpell:ignore docsy pkgs -",
+  "engines": {
+    "node": "26.x"
+  },
+  "allowScripts": {
+    "github:google/docsy#cf0c68f041daac066a0292d521461dbd092d7c31": true
+  }
 }
